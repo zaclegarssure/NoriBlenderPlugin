@@ -88,11 +88,14 @@ class NoriWriter:
             return bsdfElement
         nodes = node_tree.nodes
 
+        normal = nodes.get("Normal Map")
         diffuse = nodes.get("Diffuse BSDF")
         principled = nodes.get("Principled BSDF")
         specular = nodes.get("Specular")
         glass = nodes.get("Glass BSDF")
         glossy = nodes.get("Glossy BSDF")
+
+
 
         #if (glass):
         #    ior = glass.inputs["IOR"].default_value
@@ -108,7 +111,7 @@ class NoriWriter:
         if (diffuse):
             bsdfElement = self.create_xml_element("bsdf", {"type":"diffuse"})
             bsdfElement.appendChild(self.create_xml_texture("albedo", diffuse.inputs["Color"]))
-            bsdfElement.appendChild(self.create_xml_texture("normal", diffuse.inputs["Normal"]))
+            #bsdfElement.appendChild(self.create_xml_texture("normal", diffuse.inputs["Normal"]))
         else:
             c = slot.material.diffuse_color
             bsdfElement = self.create_xml_element("bsdf", {"type":"diffuse"})
@@ -136,8 +139,20 @@ class NoriWriter:
         #    c = slot.material.diffuse_color
         #    bsdfElement = self.__createElement("bsdf", {"type":"diffuse", "name" : slot.material.name})
         #    bsdfElement.appendChild(self.__createEntry("color", "albedo","%f,%f,%f" %(c[0],c[1],c[2])))
+        if (normal):
+            baseBsdf = self.create_xml_element("bsdf", {"type":"normal"})
+            baseBsdf.appendChild(self.create_xml_texture("normal", normal.inputs["Color"]))
+            baseBsdf.appendChild(bsdfElement)
+            return baseBsdf
+
 
         return bsdfElement
+
+    def to_nori_coord(self, transform):
+        coord_transf = bpy_extras.io_utils.axis_conversion(
+            from_forward='Y', from_up='Z', to_forward='-Z', to_up='Y').to_4x4()
+        return coord_transf @ transform
+
 
     def write(self, n_samples):
         """Main method to write the blender scene into Nori format"""
@@ -172,14 +187,13 @@ class NoriWriter:
             for source in sources:
                 if(source.data.type == "POINT"):
                     pointLight = self.create_xml_element("emitter", {"type" : "point" })
-                    pos = source.location
+                    pos = self.to_nori_coord(source.matrix_world).translation
+
                     pointLight.appendChild(self.create_xml_entry("point", "position", "%f,%f,%f"%(pos.x,pos.y,pos.z)))
                     power = source.data.energy
                     color = list(source.data.color).copy()
-                    color[0] *=power
-                    color[1] *=power
-                    color[2] *=power
-                    pointLight.appendChild(self.create_xml_entry("color", "power", f"{color[0]}, {color[1]}, {color[2]}"))
+                    pointLight.appendChild(self.create_xml_entry("color", "color", f"{color[0]}, {color[1]}, {color[2]}"))
+                    pointLight.appendChild(self.create_xml_entry("float", "power", str(power)))
                     self.scene.appendChild(pointLight)
 
         # 5) export all meshes
