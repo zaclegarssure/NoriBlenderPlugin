@@ -62,13 +62,13 @@ class NoriWriter:
         color_entry.appendChild(self.create_xml_entry("color", "value", f"{c[0]}, {c[1]}, {c[2]}"))
         return color_entry
 
-    def create_xml_texture(self, name, color_socket):
+    def create_xml_texture(self, name, color_socket, node_name = "Image Texture"):
         c = color_socket.default_value
         linked_nodes = color_socket.links
         color_entry = self.create_xml_entry("color", name, f"{c[0]}, {c[1]}, {c[2]}")
 
         if len(linked_nodes) > 0 and self.export_textures:
-            if (linked_nodes[0].from_node.bl_label == "Image Texture"):
+            if (linked_nodes[0].from_node.bl_label == node_name):
                 texture = self.create_xml_entry("string",name,bpy.path.relpath(linked_nodes[0].from_node.image.filepath)[2:])
                 color_entry = texture
 
@@ -205,6 +205,15 @@ class NoriWriter:
                     pointLight.appendChild(self.create_xml_entry("color", "color", f"{color[0]}, {color[1]}, {color[2]}"))
                     pointLight.appendChild(self.create_xml_entry("float", "power", str(power)))
                     self.scene.appendChild(pointLight)
+
+            world = bpy.context.scene.world.node_tree.nodes
+            if (world and world.get("Background")):
+                node = world.get("Background")
+                emitter = self.create_xml_element("emitter", {"type":"env_light"})
+                emitter.appendChild(self.create_xml_texture("texture", node.inputs["Color"], "Environment Texture"))
+                emitter.appendChild(self.create_xml_entry("boolean","proportional_sampling", "true"))
+
+                self.scene.appendChild(emitter)
 
         # 5) export all meshes
         if not os.path.exists(self.working_dir + "/meshes"):
