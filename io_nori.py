@@ -74,6 +74,18 @@ class NoriWriter:
 
         return color_entry
 
+    def create_xml_texture_float(self, name, float_socket):
+        c = float_socket.default_value
+        linked_nodes = float_socket.links
+        float_entry = self.create_xml_entry("float", name, str(c))
+
+        if len(linked_nodes) > 0 and self.export_textures:
+            if (linked_nodes[0].from_node.bl_label == "Image Texture"):
+                texture = self.create_xml_entry("string",name,bpy.path.relpath(linked_nodes[0].from_node.image.filepath)[2:])
+                float_entry = texture
+
+        return float_entry
+
     def create_xml_bsdf(self, slot):
         """method responsible to the auto-conversion
         between Blender internal BSDF (not Cycles!) and Nori BSDF
@@ -82,9 +94,10 @@ class NoriWriter:
         node_tree = slot.material.node_tree
 
         if (node_tree is None):
+            print("Error no material found")
             c = slot.material.diffuse_color
             bsdfElement = self.create_xml_element("bsdf", {"type":"diffuse"})
-            bsdfElement.appendChild(self.create_xml_entry("color", "value", f"{c[0]}, {c[1]}, {c[2]}"))
+            bsdfElement.appendChild(self.create_xml_entry("color", "value", "1, 0, 0"))
             return bsdfElement
         nodes = node_tree.nodes
 
@@ -97,40 +110,37 @@ class NoriWriter:
 
 
 
-        #if (glass):
-        #    ior = glass.inputs["IOR"].default_value
-        #    bsdfElement = self.create_xml_element("bsdf", {"type":"dielectric"}) # For compatibility reasons this is not called roughdielectric
-        #    bsdfElement.appendChild(self.__createColorOrTexture("color", glass.inputs["Color"]))
-        #    bsdfElement.appendChild(self.create_xml_entry("float", "IOR","%f" % ior))
-        #    bsdfElement.appendChild(self.create_xml_entry("float", "roughness","%f" % glass.inputs["Roughness"].default_value))
-        #elif (glossy and exportMaterialColor):
-        #    alpha = glossy.inputs["Roughness"].default_value
-        #    bsdfElement = self.__createElement("bsdf", {"type":"microfacet", "name" : slot.material.name})
-        #    bsdfElement.appendChild(self.__createColorOrTexture("kd", glossy.inputs["Color"]))
-        #    bsdfElement.appendChild(self.__createEntry("float", "alpha","%f" % alpha))
-        if (diffuse):
+        if (glass):
+            ior = glass.inputs["IOR"].default_value
+            bsdfElement = self.create_xml_element("bsdf", {"type":"dielectric"}) # For compatibility reasons this is not called roughdielectric
+            bsdfElement.appendChild(self.create_xml_texture("color", glass.inputs["Color"]))
+            bsdfElement.appendChild(self.create_xml_entry("float", "intIOR",f"{ior}"))
+        elif (glossy):
+            bsdfElement = self.create_xml_element("bsdf", {"type":"microfacet"})
+            bsdfElement.appendChild(self.create_xml_texture("kd", glossy.inputs["Color"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("alpha", glossy.inputs["Roughness"]))
+        elif (diffuse):
             bsdfElement = self.create_xml_element("bsdf", {"type":"diffuse"})
             bsdfElement.appendChild(self.create_xml_texture("albedo", diffuse.inputs["Color"]))
-            #bsdfElement.appendChild(self.create_xml_texture("normal", diffuse.inputs["Normal"]))
+        elif (principled):
+            bsdfElement = self.create_xml_element("bsdf", {"type":"principled"})
+            bsdfElement.appendChild(self.create_xml_texture("base_color", principled.inputs["Base Color"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("metallic", principled.inputs["Metallic"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("specular", principled.inputs["Specular"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("specular_tint", principled.inputs["Specular Tint"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("roughness", principled.inputs["Roughness"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("anisotropy", principled.inputs["Anisotropic"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("sheen", principled.inputs["Sheen"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("sheen_tint", principled.inputs["Sheen Tint"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("clearcoat", principled.inputs["Clearcoat"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("clearcoat_gloss", principled.inputs["Clearcoat Roughness"]))
+        elif (specular):
+            bsdfElement = self.create_xml_element("bsdf", {"type" : "mirror"})
         else:
             c = slot.material.diffuse_color
             bsdfElement = self.create_xml_element("bsdf", {"type":"diffuse"})
             bsdfElement.appendChild(self.create_xml_entry("color", "value", f"{c[0]}, {c[1]}, {c[2]}"))
 
-        #elif (principled and exportMaterialColor):
-        #    c = principled.inputs["Base Color"].default_value
-        #    bsdfElement = self.__createElement("bsdf", {"type":"disney", "name" : slot.material.name})
-        #    bsdfElement.appendChild(self.__createColorOrTexture("baseColor", principled.inputs["Base Color"]))
-        #    bsdfElement.appendChild(self.__createEntry("float", "metallic","%f" %(principled.inputs["Metallic"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "subsurface","%f" %(principled.inputs["Subsurface"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "specular","%f" %(principled.inputs["Specular"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "specularTint","%f" %(principled.inputs["Specular Tint"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "roughness","%f" %(principled.inputs["Roughness"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "anisotropic","%f" %(principled.inputs["Anisotropic"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "sheen","%f" %(principled.inputs["Sheen"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "sheenTint","%f" %(principled.inputs["Sheen Tint"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "clearcoat","%f" %(principled.inputs["Clearcoat"].default_value)))
-        #    bsdfElement.appendChild(self.__createEntry("float", "clearcoatGloss","%f" %(principled.inputs["Clearcoat Roughness"].default_value)))
 
 
         #elif (specular and exportMaterialColor):
