@@ -133,7 +133,7 @@ class NoriWriter:
             bsdfElement.appendChild(self.create_xml_texture_float("sheen", principled.inputs["Sheen"]))
             bsdfElement.appendChild(self.create_xml_texture_float("sheen_tint", principled.inputs["Sheen Tint"]))
             bsdfElement.appendChild(self.create_xml_texture_float("clearcoat", principled.inputs["Clearcoat"]))
-            bsdfElement.appendChild(self.create_xml_texture_float("clearcoat_gloss", principled.inputs["Clearcoat Roughness"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("clearcoat_roughness", principled.inputs["Clearcoat Roughness"]))
         elif (specular):
             bsdfElement = self.create_xml_element("bsdf", {"type" : "mirror"})
         else:
