@@ -212,6 +212,9 @@ class NoriWriter:
                 emitter = self.create_xml_element("emitter", {"type":"env_light"})
                 emitter.appendChild(self.create_xml_texture("texture", node.inputs["Color"], "Environment Texture"))
                 emitter.appendChild(self.create_xml_entry("boolean","proportional_sampling", "true"))
+                m = Matrix([[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+                m = self.to_nori_coord(m)
+                emitter.appendChild(self.create_xml_transform(m))
 
                 self.scene.appendChild(emitter)
 
