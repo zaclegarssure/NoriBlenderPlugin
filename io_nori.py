@@ -205,6 +205,20 @@ class NoriWriter:
                     pointLight.appendChild(self.create_xml_entry("color", "color", f"{color[0]}, {color[1]}, {color[2]}"))
                     pointLight.appendChild(self.create_xml_entry("float", "power", str(power)))
                     self.scene.appendChild(pointLight)
+                elif (source.data.type == "SPOT"):
+                    spotLight = self.create_xml_element("emitter", {"type" : "spot" })
+                    toWorld = self.to_nori_coord(source.matrix_world)
+
+                    spotLight.appendChild(self.create_xml_transform(toWorld))
+                    power = source.data.energy
+                    color = list(source.data.color).copy()
+                    size = source.data.spot_size
+                    blend = source.data.spot_blend
+                    spotLight.appendChild(self.create_xml_entry("color", "color", f"{color[0]}, {color[1]}, {color[2]}"))
+                    spotLight.appendChild(self.create_xml_entry("float", "power", str(power)))
+                    spotLight.appendChild(self.create_xml_entry("float", "size", str(size)))
+                    spotLight.appendChild(self.create_xml_entry("float", "blend", str(blend)))
+                    self.scene.appendChild(spotLight)
 
             world = bpy.context.scene.world.node_tree.nodes
             if (world and world.get("Background")):
