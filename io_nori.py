@@ -258,6 +258,11 @@ class NoriWriter:
         camera.appendChild(self.create_xml_entry("integer", "height", str(
             int(self.context.scene.render.resolution_y * percent))))
 
+        dof_param = cam.data.dof
+        if dof_param.use_dof:
+            camera.appendChild(self.create_xml_entry("float", "focalDistance", str(dof_param.focus_distance)))
+            camera.appendChild(self.create_xml_entry("float", "lensRadius", str((cam.data.lens / 1000.0) / (2.0 * dof_param.aperture_fstop))))
+
         mat = cam.matrix_world
 
         # Conversion to Y-up coordinate system
