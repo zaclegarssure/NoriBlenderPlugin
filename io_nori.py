@@ -130,6 +130,7 @@ class NoriWriter:
             bsdfElement.appendChild(self.create_xml_texture_float("specular_tint", principled.inputs["Specular Tint"]))
             bsdfElement.appendChild(self.create_xml_texture_float("roughness", principled.inputs["Roughness"]))
             bsdfElement.appendChild(self.create_xml_texture_float("anisotropy", principled.inputs["Anisotropic"]))
+            bsdfElement.appendChild(self.create_xml_texture_float("ani_rotation", principled.inputs["Anisotropic Rotation"]))
             bsdfElement.appendChild(self.create_xml_texture_float("sheen", principled.inputs["Sheen"]))
             bsdfElement.appendChild(self.create_xml_texture_float("sheen_tint", principled.inputs["Sheen Tint"]))
             bsdfElement.appendChild(self.create_xml_texture_float("clearcoat", principled.inputs["Clearcoat"]))
